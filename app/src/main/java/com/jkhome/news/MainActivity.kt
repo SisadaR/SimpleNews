@@ -14,6 +14,8 @@ import java.util.zip.Inflater
 
 class MainActivity : AppCompatActivity() {
     private val binding: ActivityMainBinding by lazy { ActivityMainBinding.inflate(layoutInflater)}
+    private var pageNumber = 1
+    private var list = mutableListOf<Data>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,47 +23,48 @@ class MainActivity : AppCompatActivity() {
 
 
         binding.searchButton.setOnClickListener {
-            val url = getUrl()
-            val queue = Volley.newRequestQueue(this)
-            val stringRequest = StringRequest(
-                Request.Method.GET,
-                url,
-                { response ->
-                    Toast.makeText(this,response,Toast.LENGTH_SHORT).show()
-                    extractJSON(response)
-//                    try {
-//                        extractJSON(response)
-//                    }
-//                    catch (e: Exception){
-//                        e.printStackTrace()
-//                    }
-                },
-                { error ->
-                    Toast.makeText(this,error.message,Toast.LENGTH_SHORT).show()
-                }
-                )
+            list = mutableListOf()
+            sendRequest()
+        }
 
-            queue.add(stringRequest)
-            queue.start()
+        binding.loadMoreButton.setOnClickListener {
+            pageNumber++
+            sendRequest()
         }
     }
 
     private fun getUrl(): String {
         val word = binding.searchEditText.text
         val apiKey = "72daf1c7-cf9f-45e5-98d3-5bb3d6a373a6"
-        val pageNumber = 1
         val pageSize = 10
         return "https://content.guardianapis.com/search?q=$word&page=$pageNumber&page-size=$pageSize&api-key=$apiKey"
 
     }
 
+    private fun sendRequest(){
+        val url = getUrl()
+        val queue = Volley.newRequestQueue(this)
+        val stringRequest = StringRequest(
+            Request.Method.GET,
+            url,
+            { response ->
+
+                extractJSON(response)
+            },
+            { error ->
+                Toast.makeText(this,error.message,Toast.LENGTH_SHORT).show()
+            }
+        )
+
+        queue.add(stringRequest)
+        queue.start()
+    }
     private fun extractJSON(jsonString: String)
     {
         val jsonObject = JSONObject(jsonString)
         val jsonResponseBody = jsonObject.getJSONObject("response")
         val result = jsonResponseBody.getJSONArray("results")
 
-        val list = mutableListOf<Data>()
         for (i in 0..9)
         {
             val item = result.getJSONObject(i)
