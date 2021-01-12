@@ -2,10 +2,14 @@ package com.jkhome.news
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Adapter
+import android.widget.Toast
 import com.android.volley.Request
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.jkhome.news.databinding.ActivityMainBinding
+import org.json.JSONObject
+import java.lang.Exception
 import java.util.zip.Inflater
 
 class MainActivity : AppCompatActivity() {
@@ -23,10 +27,17 @@ class MainActivity : AppCompatActivity() {
                 Request.Method.GET,
                 url,
                 { response ->
-                    response
+                    Toast.makeText(this,response,Toast.LENGTH_SHORT).show()
+                    extractJSON(response)
+//                    try {
+//                        extractJSON(response)
+//                    }
+//                    catch (e: Exception){
+//                        e.printStackTrace()
+//                    }
                 },
                 { error ->
-                    error
+                    Toast.makeText(this,error.message,Toast.LENGTH_SHORT).show()
                 }
                 )
 
@@ -42,5 +53,25 @@ class MainActivity : AppCompatActivity() {
         val pageSize = 10
         return "https://content.guardianapis.com/search?q=$word&page=$pageNumber&page-size=$pageSize&api-key=$apiKey"
 
+    }
+
+    private fun extractJSON(jsonString: String)
+    {
+        val jsonObject = JSONObject(jsonString)
+        val jsonResponseBody = jsonObject.getJSONObject("response")
+        val result = jsonResponseBody.getJSONArray("results")
+
+        val list = mutableListOf<Data>()
+        for (i in 0..9)
+        {
+            val item = result.getJSONObject(i)
+            val webTitle = item.getString("webTitle")
+            val webUrl = item.getString("webUrl")
+            val data = Data(webTitle,webUrl)
+            list.add(data)
+        }
+
+        val adapter = NewsAdapter(list)
+        binding.listView.adapter = adapter
     }
 }
